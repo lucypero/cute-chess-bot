@@ -32,5 +32,5 @@ jobs:
           name: cute-chess-bot
           path: target/release/cute-chess-bot
 
-      - name: Notify server
-        run: echo $GITHUB_JOB | netcat ${{secrets.SECRET_SERVER_IP}} 3334
+#      - name: Notify server
+#        run: echo $GITHUB_JOB | netcat ${{secrets.SECRET_SERVER_IP}} 3334

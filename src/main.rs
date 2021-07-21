@@ -1,3 +1,5 @@
+#![allow(unused_imports)]
+
 use std::{
     collections::{HashMap, HashSet},
     env,
@@ -27,7 +29,12 @@ use serenity::{
 };
 
 use rand::prelude::*;
+use serenity::http::routing::Route::ChannelsId;
+use serenity::model::id::ChannelId;
+use serenity::utils::MessageBuilder;
 use tokio::sync::Mutex;
+
+const EMBED_SIDE_COLOR: Color = Color::from_rgb(255, 192, 203);
 
 // A container type is created for inserting into the Client's `data`, which
 // allows for data to be accessible across all events and framework commands, or
@@ -38,16 +45,19 @@ impl TypeMapKey for ShardManagerContainer {
     type Value = Arc<Mutex<ShardManager>>;
 }
 
-struct CommandCounter;
-
-impl TypeMapKey for CommandCounter {
-    type Value = HashMap<String, u64>;
-}
-
 #[derive(Debug)]
 struct BlitzQuote {
     quote: String,
     author: String,
+}
+
+impl BlitzQuote {
+    fn new<T: Into<String>>(quote: T, author: T) -> BlitzQuote {
+        BlitzQuote {
+            quote: quote.into(),
+            author: author.into(),
+        }
+    }
 }
 
 struct BlitzQuoteContainer;
@@ -66,59 +76,8 @@ impl EventHandler for Handler {
 }
 
 #[group]
-#[commands(commands, blitz)]
+#[commands(blitz, color)]
 struct General;
-
-#[group]
-// Sets multiple prefixes for a group.
-// This requires us to call commands in this group
-// via `~emoji` (or `~em`) instead of just `~`.
-#[prefixes("emoji", "em")]
-// Set a description to appear if a user wants to display a single group
-// e.g. via help using the group-name or one of its prefixes.
-#[description = "A group with commands providing an emoji as response."]
-// Summary only appears when listing multiple groups.
-#[summary = "Do emoji fun!"]
-// Sets a command that will be executed if only a group-prefix was passed.
-#[default_command(bird)]
-#[commands(cat, dog)]
-struct Emoji;
-
-#[group]
-// Sets a single prefix for this group.
-// So one has to call commands in this group
-// via `~math` instead of just `~`.
-#[prefix = "math"]
-#[commands(multiply)]
-struct Math;
-
-#[hook]
-async fn before(ctx: &Context, msg: &Message, command_name: &str) -> bool {
-    println!(
-        "Got command '{}' by user '{}'",
-        command_name, msg.author.name
-    );
-
-    // Increment the number of times this command has been run once. If
-    // the command's name does not exist in the counter, add a default
-    // value of 0.
-    let mut data = ctx.data.write().await;
-    let counter = data
-        .get_mut::<CommandCounter>()
-        .expect("Expected CommandCounter in TypeMap.");
-    let entry = counter.entry(command_name.to_string()).or_insert(0);
-    *entry += 1;
-
-    true // if `before` returns false, command processing doesn't happen.
-}
-
-#[hook]
-async fn after(_ctx: &Context, _msg: &Message, command_name: &str, command_result: CommandResult) {
-    match command_result {
-        Ok(()) => println!("Processed command '{}'", command_name),
-        Err(why) => println!("Command '{}' returned error {:?}", command_name, why),
-    }
-}
 
 #[hook]
 async fn unknown_command(_ctx: &Context, _msg: &Message, unknown_command_name: &str) {
@@ -162,28 +121,8 @@ async fn main() {
                 // are owners only.
                 .owners(owners)
         })
-        // Set a function to be called prior to each command execution. This
-        // provides the context of the command, the message that was received,
-        // and the full name of the command that will be called.
-        //
-        // Avoid using this to determine whether a specific command should be
-        // executed. Instead, prefer using the `#[check]` macro which
-        // gives you this functionality.
-        //
-        // **Note**: Async closures are unstable, you may use them in your
-        // application if you are fine using nightly Rust.
-        // If not, we need to provide the function identifiers to the
-        // hook-functions (before, after, normal, ...).
-        .before(before)
-        // Similar to `before`, except will be called directly _after_
-        // command execution.
-        .after(after)
-        // Set a function that's called whenever an attempted command-call's
-        // command could not be found.
         .unrecognised_command(unknown_command)
-        .group(&GENERAL_GROUP)
-        .group(&EMOJI_GROUP)
-        .group(&MATH_GROUP);
+        .group(&GENERAL_GROUP);
     // Set a function that's called whenever a message is not a command.
 
     // Finally, start a single shard, and start listening to events.
@@ -198,18 +137,17 @@ async fn main() {
 
     {
         let mut data = client.data.write().await;
-        data.insert::<CommandCounter>(HashMap::default());
         data.insert::<ShardManagerContainer>(Arc::clone(&client.shard_manager));
 
         let quotes = vec![
-            BlitzQuote {quote: "Rapid and blitz chess is first of all for enjoyment.".to_string(), author: "Magnus Carlsen".to_string()},
-            BlitzQuote {quote: "Playing rapid chess, one can lose the habit of concentrating for several hours in serious chess. That is why, if a player has big aims, he should limit his rapid play in favour of serious chess.".to_string(), author: "Vladimir Kramnik".to_string()},
-            BlitzQuote {quote: "He who analyses blitz is stupid.".to_string(), author: "Rashid Nezhmetdinov".to_string()},
-            BlitzQuote {quote: "Blitz chess kills your ideas.".to_string(), author: "Bobby Fischer".to_string()},
-            BlitzQuote {quote: "To be honest, I consider [bullet chess] a bit moronic, and therefore I never play it.".to_string(), author: "Vladimir Kramnik".to_string()},
-            BlitzQuote {quote: "I play way too much blitz chess. It rots the brain just as surely as alcohol.".to_string(), author: "Nigel Short".to_string()},
-            BlitzQuote {quote: "Blitz is simply a waste of time.".to_string(), author: "Vladimir Malakhov".to_string()},
-            BlitzQuote {quote: "[Blitz] is just getting positions where you can move fast. I mean, it's not chess.".to_string(), author: "Hikaru Nakamura".to_string()},
+            BlitzQuote::new("Rapid and blitz chess is first of all for enjoyment.", "Magnus Carlsen"),
+            BlitzQuote::new("Playing rapid chess, one can lose the habit of concentrating for several hours in serious chess. That is why, if a player has big aims, he should limit his rapid play in favour of serious chess.", "Vladimir Kramnik"),
+            BlitzQuote::new("He who analyses blitz is stupid.", "Rashid Nezhmetdinov"),
+            BlitzQuote::new("Blitz chess kills your ideas.", "Bobby Fischer"),
+            BlitzQuote::new("To be honest, I consider [bullet chess] a bit moronic, and therefore I never play it.", "Vladimir Kramnik"),
+            BlitzQuote::new("I play way too much blitz chess. It rots the brain just as surely as alcohol.", "Nigel Short"),
+            BlitzQuote::new("Blitz is simply a waste of time.", "Vladimir Malakhov"),
+            BlitzQuote::new("[Blitz] is just getting positions where you can move fast. I mean, it's not chess.", "Hikaru Nakamura"),
         ];
 
         data.insert::<BlitzQuoteContainer>(quotes);
@@ -221,9 +159,29 @@ async fn main() {
 }
 
 #[command]
-async fn blitz(ctx: &Context, msg: &Message) -> CommandResult {
-    let contents = String::default();
+#[aliases("colour")]
+async fn color(ctx: &Context, msg: &Message) -> CommandResult {
+    let bot_channel_id : i64 = 855703545398427668;
+    let desc = format!("You can get cute :sparkles: by using the color commands at <#{}>\nUse `color list` to list all the available colors\nThen `color = [color name or number]` to set your role color!\nIf you'd like a color that is not on the list, let Lucy know!", bot_channel_id);
 
+    msg.channel_id
+        .send_message(&ctx.http, |m| {
+            m.embed(|e| {
+                e.title("Set your own role color!");
+                e.color(EMBED_SIDE_COLOR);
+                e.description(desc);
+                e
+            });
+            m
+        })
+        .await
+        .expect("error making message");
+
+    Ok(())
+}
+
+#[command]
+async fn blitz(ctx: &Context, msg: &Message) -> CommandResult {
     let data = ctx.data.read().await;
     let quotes = data
         .get::<BlitzQuoteContainer>()
@@ -241,11 +199,10 @@ async fn blitz(ctx: &Context, msg: &Message) -> CommandResult {
     let mut the_quote = String::default();
     write!(the_quote, "- {}", &quotes[index].author)?;
 
-    let msg = msg
-        .channel_id
+    msg.channel_id
         .send_message(&ctx.http, |m| {
             m.embed(|e| {
-                e.color(Color::from_rgb(255, 192, 203));
+                e.color(EMBED_SIDE_COLOR);
                 e.description(desc);
                 e.footer(|f| {
                     f.text(the_quote);
@@ -257,79 +214,6 @@ async fn blitz(ctx: &Context, msg: &Message) -> CommandResult {
         })
         .await
         .expect("error making message");
-
-    msg.channel_id.say(&ctx.http, contents).await?;
-    Ok(())
-}
-
-#[command]
-// Adds multiple aliases
-#[aliases("kitty", "neko")]
-// Make this command use the "emoji" bucket.
-#[bucket = "emoji"]
-// Allow only administrators to call this:
-#[required_permissions("ADMINISTRATOR")]
-async fn cat(ctx: &Context, msg: &Message) -> CommandResult {
-    msg.channel_id.say(&ctx.http, ":cat:").await?;
-
-    // We can return one ticket to the bucket undoing the ratelimit.
-    Err(RevertBucket.into())
-}
-
-#[command]
-#[description = "Sends an emoji with a dog."]
-#[bucket = "emoji"]
-async fn dog(ctx: &Context, msg: &Message) -> CommandResult {
-    msg.channel_id.say(&ctx.http, ":dog:").await?;
-
-    Ok(())
-}
-
-#[command]
-async fn bird(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
-    let say_content = if args.is_empty() {
-        ":bird: can find animals for you.".to_string()
-    } else {
-        format!(":bird: could not find animal named: `{}`.", args.rest())
-    };
-
-    msg.channel_id.say(&ctx.http, say_content).await?;
-
-    Ok(())
-}
-
-#[command]
-// Lets us also call `~math *` instead of just `~math multiply`.
-#[aliases("*")]
-async fn multiply(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
-    let first = args.single::<f64>()?;
-    let second = args.single::<f64>()?;
-
-    let res = first * second;
-
-    msg.channel_id.say(&ctx.http, &res.to_string()).await?;
-
-    Ok(())
-}
-
-// Commands can be created via the attribute `#[command]` macro.
-#[command]
-// Options are passed via subsequent attributes.
-// Make this command use the "complicated" bucket.
-#[bucket = "complicated"]
-async fn commands(ctx: &Context, msg: &Message) -> CommandResult {
-    let mut contents = "Commands used:\n".to_string();
-
-    let data = ctx.data.read().await;
-    let counter = data
-        .get::<CommandCounter>()
-        .expect("Expected CommandCounter in TypeMap.");
-
-    for (k, v) in counter {
-        writeln!(contents, "- {name}: {amount}", name = k, amount = v)?;
-    }
-
-    msg.channel_id.say(&ctx.http, &contents).await?;
 
     Ok(())
 }
