@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Rust toolchain
+        run: rustup default stable
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Run tests
+        run: cargo test --verbose
+
+      # - name: Rustfmt and Clippy
+      #   run: |
+      #     cargo fmt -- --check
+      #     cargo clippy
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: cute-chess-bot
+          path: target/release/cute-chess-bot
+
+      - name: Notify server
+        run: echo $GITHUB_JOB | netcat ${{secrets.SECRET_SERVER_IP}} 3334
