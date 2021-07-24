@@ -36,6 +36,12 @@ use tokio::sync::Mutex;
 
 const EMBED_SIDE_COLOR: Color = Color::from_rgb(255, 192, 203);
 
+// Generate a random index
+fn random_index(upper_bound: usize) -> usize {
+    let mut rng = thread_rng();
+    rng.gen_range(0..upper_bound)
+}
+
 // A container type is created for inserting into the Client's `data`, which
 // allows for data to be accessible across all events and framework commands, or
 // anywhere else that has a copy of the `data` Arc.
@@ -188,11 +194,7 @@ async fn blitz(ctx: &Context, msg: &Message) -> CommandResult {
         .get::<BlitzQuoteContainer>()
         .expect("Expected blitz quotes in typemap.");
 
-    let index;
-    {
-        let mut rng = thread_rng();
-        index = rng.gen_range(0..quotes.len());
-    }
+    let index = random_index(quotes.len());
 
     let mut desc = String::default();
     write!(desc, "\"{}\"", &quotes[index].quote)?;
@@ -222,16 +224,18 @@ async fn blitz(ctx: &Context, msg: &Message) -> CommandResult {
 #[command]
 async fn whyrust(ctx: &Context, msg: &Message) -> CommandResult {
     let title = "Why rust?!";
-    let reasons = vec!["Why not?", "Sane defaults", "It is fun!", "cargo"];
+    let reasons = vec![
+        "Why not?",
+        "cargo",
+        "match expressions",
+        "const is the default",
+        "Cute crab mascotte 🦀",
+    ];
 
-    let random_index;
-    {
-        let mut rng = thread_rng();
-        random_index = rng.gen_range(0..reasons.len());
-    }
+    let index = random_index(reasons.len());
 
     let mut choice = String::default();
-    write!(choice, "{}", &reasons[random_index])?;
+    write!(choice, "{}", &reasons[index])?;
 
     msg.channel_id
         .send_message(&ctx.http, |m| {
