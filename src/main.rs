@@ -227,7 +227,7 @@ async fn whyrust(ctx: &Context, msg: &Message) -> CommandResult {
     let random_index = thread_rng().gen_range(0..reasons.len());
 
     let mut choice = String::default();
-    write!(choice, "\"{}\"", &reasons[random_index])?;
+    write!(choice, "{}", &reasons[random_index])?;
 
     msg.channel_id
         .send_message(&ctx.http, |m| {
