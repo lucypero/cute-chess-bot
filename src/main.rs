@@ -224,7 +224,11 @@ async fn whyrust(ctx: &Context, msg: &Message) -> CommandResult {
     let title = "Why rust?!";
     let reasons = vec!["Why not?", "Sane defaults", "It is fun!", "cargo"];
 
-    let random_index = thread_rng().gen_range(0..reasons.len());
+    let random_index;
+    {
+        let mut rng = thread_rng();
+        random_index = rng.gen_range(0..reasons.len());
+    }
 
     let mut choice = String::default();
     write!(choice, "{}", &reasons[random_index])?;
