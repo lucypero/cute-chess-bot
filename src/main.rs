@@ -221,29 +221,20 @@ async fn blitz(ctx: &Context, msg: &Message) -> CommandResult {
 
 #[command]
 async fn whyrust(ctx: &Context, msg: &Message) -> CommandResult {
-    let quotes = vec!["Why not?", "Sane defaults"];
+    let title = "Why rust?!";
+    let reasons = vec!["Why not?", "Sane defaults", "It is fun!", "cargo"];
 
-    let index;
-    {
-        let mut rng = thread_rng();
-        index = rng.gen_range(0..quotes.len());
-    }
+    let random_index = thread_rng().gen_range(0..reasons.len());
 
-    let mut desc = String::default();
-    write!(desc, "\"{}\"", &quotes[index])?;
-
-    let mut the_quote = String::default();
-    write!(the_quote, "- {}", &quotes[index])?;
+    let mut choice = String::default();
+    write!(choice, "\"{}\"", &reasons[random_index])?;
 
     msg.channel_id
         .send_message(&ctx.http, |m| {
             m.embed(|e| {
                 e.color(EMBED_SIDE_COLOR);
-                e.description(desc);
-                e.footer(|f| {
-                    f.text(the_quote);
-                    f
-                });
+                e.title(title);
+                e.description(choice);
                 e
             });
             m
