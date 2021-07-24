@@ -76,7 +76,7 @@ impl EventHandler for Handler {
 }
 
 #[group]
-#[commands(blitz, color)]
+#[commands(blitz, whyrust, color)]
 struct General;
 
 #[hook]
@@ -148,6 +148,7 @@ async fn main() {
             BlitzQuote::new("I play way too much blitz chess. It rots the brain just as surely as alcohol.", "Nigel Short"),
             BlitzQuote::new("Blitz is simply a waste of time.", "Vladimir Malakhov"),
             BlitzQuote::new("[Blitz] is just getting positions where you can move fast. I mean, it's not chess.", "Hikaru Nakamura"),
+            BlitzQuote::new("Always sack the exchange!", "Ben F6gold"),
         ];
 
         data.insert::<BlitzQuoteContainer>(quotes);
@@ -161,7 +162,7 @@ async fn main() {
 #[command]
 #[aliases("colour")]
 async fn color(ctx: &Context, msg: &Message) -> CommandResult {
-    let bot_channel_id : i64 = 855703545398427668;
+    let bot_channel_id: i64 = 855703545398427668;
     let desc = format!("You can get cute :sparkles: by using the color commands at <#{}>\nUse `color list` to list all the available colors\nThen `color = [color name or number]` to set your role color!\nIf you'd like a color that is not on the list, let Lucy know!", bot_channel_id);
 
     msg.channel_id
@@ -198,6 +199,41 @@ async fn blitz(ctx: &Context, msg: &Message) -> CommandResult {
 
     let mut the_quote = String::default();
     write!(the_quote, "- {}", &quotes[index].author)?;
+
+    msg.channel_id
+        .send_message(&ctx.http, |m| {
+            m.embed(|e| {
+                e.color(EMBED_SIDE_COLOR);
+                e.description(desc);
+                e.footer(|f| {
+                    f.text(the_quote);
+                    f
+                });
+                e
+            });
+            m
+        })
+        .await
+        .expect("error making message");
+
+    Ok(())
+}
+
+#[command]
+async fn whyrust(ctx: &Context, msg: &Message) -> CommandResult {
+    let quotes = vec!["Why not?", "Sane defaults"];
+
+    let index;
+    {
+        let mut rng = thread_rng();
+        index = rng.gen_range(0..quotes.len());
+    }
+
+    let mut desc = String::default();
+    write!(desc, "\"{}\"", &quotes[index])?;
+
+    let mut the_quote = String::default();
+    write!(the_quote, "- {}", &quotes[index])?;
 
     msg.channel_id
         .send_message(&ctx.http, |m| {
