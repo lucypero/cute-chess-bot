@@ -36,6 +36,12 @@ use tokio::sync::Mutex;
 
 const EMBED_SIDE_COLOR: Color = Color::from_rgb(255, 192, 203);
 
+// Generate a random index
+fn random_index(upper_bound: usize) -> usize {
+    let mut rng = thread_rng();
+    rng.gen_range(0..upper_bound)
+}
+
 // A container type is created for inserting into the Client's `data`, which
 // allows for data to be accessible across all events and framework commands, or
 // anywhere else that has a copy of the `data` Arc.
@@ -76,7 +82,7 @@ impl EventHandler for Handler {
 }
 
 #[group]
-#[commands(blitz, color)]
+#[commands(blitz, whyrust, color)]
 struct General;
 
 #[hook]
@@ -139,15 +145,16 @@ async fn main() {
         let mut data = client.data.write().await;
         data.insert::<ShardManagerContainer>(Arc::clone(&client.shard_manager));
 
-        let quotes : Vec<BlitzQuote> = vec![
-            ("Rapid and blitz chess is first of all for enjoyment.", "Magnus Carlsen").into(),
-            ("Playing rapid chess, one can lose the habit of concentrating for several hours in serious chess. That is why, if a player has big aims, he should limit his rapid play in favour of serious chess.", "Vladimir Kramnik").into(),
-            ("He who analyses blitz is stupid.", "Rashid Nezhmetdinov").into(),
-            ("Blitz chess kills your ideas.", "Bobby Fischer").into(),
-            ("To be honest, I consider [bullet chess] a bit moronic, and therefore I never play it.", "Vladimir Kramnik").into(),
-            ("I play way too much blitz chess. It rots the brain just as surely as alcohol.", "Nigel Short").into(),
-            ("Blitz is simply a waste of time.", "Vladimir Malakhov").into(),
-            ("[Blitz] is just getting positions where you can move fast. I mean, it's not chess.", "Hikaru Nakamura").into(),
+        let quotes = vec![
+            BlitzQuote::new("Rapid and blitz chess is first of all for enjoyment.", "Magnus Carlsen"),
+            BlitzQuote::new("Playing rapid chess, one can lose the habit of concentrating for several hours in serious chess. That is why, if a player has big aims, he should limit his rapid play in favour of serious chess.", "Vladimir Kramnik"),
+            BlitzQuote::new("He who analyses blitz is stupid.", "Rashid Nezhmetdinov"),
+            BlitzQuote::new("Blitz chess kills your ideas.", "Bobby Fischer"),
+            BlitzQuote::new("To be honest, I consider [bullet chess] a bit moronic, and therefore I never play it.", "Vladimir Kramnik"),
+            BlitzQuote::new("I play way too much blitz chess. It rots the brain just as surely as alcohol.", "Nigel Short"),
+            BlitzQuote::new("Blitz is simply a waste of time.", "Vladimir Malakhov"),
+            BlitzQuote::new("[Blitz] is just getting positions where you can move fast. I mean, it's not chess.", "Hikaru Nakamura"),
+            BlitzQuote::new("Always sack the exchange!", "Ben F6gold"),
         ];
 
         data.insert::<BlitzQuoteContainer>(quotes);
@@ -187,11 +194,7 @@ async fn blitz(ctx: &Context, msg: &Message) -> CommandResult {
         .get::<BlitzQuoteContainer>()
         .expect("Expected blitz quotes in typemap.");
 
-    let index;
-    {
-        let mut rng = thread_rng();
-        index = rng.gen_range(0..quotes.len());
-    }
+    let index = random_index(quotes.len());
 
     let mut desc = String::default();
     write!(desc, "\"{}\"", &quotes[index].quote)?;
@@ -208,6 +211,38 @@ async fn blitz(ctx: &Context, msg: &Message) -> CommandResult {
                     f.text(the_quote);
                     f
                 });
+                e
+            });
+            m
+        })
+        .await
+        .expect("error making message");
+
+    Ok(())
+}
+
+#[command]
+async fn whyrust(ctx: &Context, msg: &Message) -> CommandResult {
+    let title = "Why rust?!";
+    let reasons = vec![
+        "Why not?",
+        "cargo",
+        "match expressions",
+        "const is the default",
+        "Cute crab mascotte 🦀",
+    ];
+
+    let index = random_index(reasons.len());
+
+    let mut choice = String::default();
+    write!(choice, "{}", &reasons[index])?;
+
+    msg.channel_id
+        .send_message(&ctx.http, |m| {
+            m.embed(|e| {
+                e.color(EMBED_SIDE_COLOR);
+                e.title(title);
+                e.description(choice);
                 e
             });
             m
