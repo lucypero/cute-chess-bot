@@ -57,11 +57,11 @@ struct BlitzQuote {
     author: String,
 }
 
-impl BlitzQuote {
-    fn new<T: Into<String>>(quote: T, author: T) -> BlitzQuote {
+impl From<(&str, &str)> for BlitzQuote {
+    fn from(q: (&str, &str)) -> Self {
         BlitzQuote {
-            quote: quote.into(),
-            author: author.into(),
+            quote: q.0.to_string(),
+            author: q.1.to_string(),
         }
     }
 }
@@ -169,7 +169,7 @@ async fn main() {
 #[aliases("colour")]
 async fn color(ctx: &Context, msg: &Message) -> CommandResult {
     let bot_channel_id: i64 = 855703545398427668;
-    let desc = format!("You can get cute :sparkles: by using the color commands at <#{}>\nUse `color list` to list all the available colors\nThen `color = [color name or number]` to set your role color!\nIf you'd like a color that is not on the list, let Lucy know!", bot_channel_id);
+    let desc = format!("You can get cute :sparkles: by using the color commands at <#{}>\nUse `/color list` to list all the available colors\nThen `/set color [number or color]` to set your role color!\nIf you'd like a color that is not on the list, let Lucy know!", bot_channel_id);
 
     msg.channel_id
         .send_message(&ctx.http, |m| {
