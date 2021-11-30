@@ -145,16 +145,16 @@ async fn main() {
         let mut data = client.data.write().await;
         data.insert::<ShardManagerContainer>(Arc::clone(&client.shard_manager));
 
-        let quotes = vec![
-            BlitzQuote::new("Rapid and blitz chess is first of all for enjoyment.", "Magnus Carlsen"),
-            BlitzQuote::new("Playing rapid chess, one can lose the habit of concentrating for several hours in serious chess. That is why, if a player has big aims, he should limit his rapid play in favour of serious chess.", "Vladimir Kramnik"),
-            BlitzQuote::new("He who analyses blitz is stupid.", "Rashid Nezhmetdinov"),
-            BlitzQuote::new("Blitz chess kills your ideas.", "Bobby Fischer"),
-            BlitzQuote::new("To be honest, I consider [bullet chess] a bit moronic, and therefore I never play it.", "Vladimir Kramnik"),
-            BlitzQuote::new("I play way too much blitz chess. It rots the brain just as surely as alcohol.", "Nigel Short"),
-            BlitzQuote::new("Blitz is simply a waste of time.", "Vladimir Malakhov"),
-            BlitzQuote::new("[Blitz] is just getting positions where you can move fast. I mean, it's not chess.", "Hikaru Nakamura"),
-            BlitzQuote::new("Always sack the exchange!", "Ben F6gold"),
+        let quotes : Vec<BlitzQuote> = vec![
+            ("Rapid and blitz chess is first of all for enjoyment.", "Magnus Carlsen").into(),
+            ("Playing rapid chess, one can lose the habit of concentrating for several hours in serious chess. That is why, if a player has big aims, he should limit his rapid play in favour of serious chess.", "Vladimir Kramnik").into(),
+            ("He who analyses blitz is stupid.", "Rashid Nezhmetdinov").into(),
+            ("Blitz chess kills your ideas.", "Bobby Fischer").into(),
+            ("To be honest, I consider [bullet chess] a bit moronic, and therefore I never play it.", "Vladimir Kramnik").into(),
+            ("I play way too much blitz chess. It rots the brain just as surely as alcohol.", "Nigel Short").into(),
+            ("Blitz is simply a waste of time.", "Vladimir Malakhov").into(),
+            ("[Blitz] is just getting positions where you can move fast. I mean, it's not chess.", "Hikaru Nakamura").into(),
+            ("Always sack the exchange!", "Ben F6gold").into(),
         ];
 
         data.insert::<BlitzQuoteContainer>(quotes);
